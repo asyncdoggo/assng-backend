@@ -54,4 +54,4 @@ const ProjectSchema = new mongoose.Schema({
 })
 
 
-export default mongoose.model('Porject',ProjectSchema)
+export default mongoose.model('Project',ProjectSchema)

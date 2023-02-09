@@ -7,13 +7,12 @@ import jsonwebtoken from "jsonwebtoken";
 const ProjectRouter = express.Router()
 
 
-
+// token validator middleware
 function tokenRequired(req,res,next) {
     let token = req.cookies.token
     if (token == null) return res.sendStatus(401)
   
     jsonwebtoken.verify(token, process.env.TOKEN_SECRET, (err, user) => {
-      console.log(err)
       if (err) return res.sendStatus(403)
       req.user = user
       next()
@@ -28,7 +27,8 @@ ProjectRouter.get("/", tokenRequired, async (req,res) => {
     try{
         let user = req.user;
         //TODO
-        res.json("projects")
+        const projects = await Project.find();
+        res.json(projects)
     }
     catch(err){
         res.status(500).json({message: err.message})
@@ -36,7 +36,8 @@ ProjectRouter.get("/", tokenRequired, async (req,res) => {
 })
 
 
-ProjectRouter.post("/", async (req,res) => {
+ProjectRouter.post("/", tokenRequired,async (req,res) => {
+    let user = req.user
     const project =  new Project({
         name: req.body.name,
         type: req.body.type,
@@ -58,7 +59,7 @@ ProjectRouter.post("/", async (req,res) => {
     }
 })
 
-ProjectRouter.get("/:id",getProjects, (req,res) => {
+ProjectRouter.get("/:id",getProjects, tokenRequired, (req,res) => {
     res.json(res.project)
 })
 
