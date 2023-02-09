@@ -3,6 +3,10 @@ import mongoose from "mongoose";
 import { config } from "dotenv";
 import './routes/login.js'
 import LoginRouter from "./routes/login.js";
+import ProjectRouter from "./routes/projects.js";
+import cookieParser from "cookie-parser";
+
+
 
 config()
 
@@ -18,9 +22,12 @@ db.once('open',() => console.log("connected to db"))
 
 
 app.use(express.json())
+app.use(cookieParser())
 
 
 app.use("/login",LoginRouter)
+
+app.use("/projects", ProjectRouter)
 
 
 app.listen(3000, () => {

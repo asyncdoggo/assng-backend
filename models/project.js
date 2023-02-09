@@ -26,8 +26,9 @@ const ProjectSchema = new mongoose.Schema({
         enum: ["A","B","C","D"]
     },
     priority: {
-        type: String,
-        required:true
+        type: Number,
+        required:true,
+        enum: [0,1,2]
     },
     department: {
         type: String,
@@ -47,9 +48,10 @@ const ProjectSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        required:true
+        required:true,
+        enum: ["Registered","Closed","Cancelled"]
     },
 })
 
 
-export default mongoose.model('Porject',UsersSchema)
+export default mongoose.model('Porject',ProjectSchema)
