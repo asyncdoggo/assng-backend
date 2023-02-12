@@ -27,7 +27,7 @@ LoginRouter.post("/", async (req, res) => {
         const newUser = await user.save();
         let token = generateAccessToken(newUser.username);
         res.cookie("token", token, { httpOnly: true, secure: true });
-        res.status(201).json({ status: "success" });
+        res.status(201).json({ message: "success" });
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
@@ -37,7 +37,7 @@ LoginRouter.post("/", async (req, res) => {
 LoginRouter.put("/", async (req, res) => {
     try {
         var user = await User.findOne({
-            username: req.body.username
+            email: req.body.email
          }).exec();
         if (user == null) {
             return res.status(404).json({ message: "Cannot find user" });
@@ -53,25 +53,7 @@ LoginRouter.put("/", async (req, res) => {
     }
 
     const token = generateAccessToken(user.username);
-    res.cookie("token", token, { httpOnly: true, secure: true });
-    res.status(201).json({ status: "success" });
+    return res.status(201).json({ message: "success", token: token });
 });
-
-// // middleware
-// async function getUsers(req,res,next) {
-//     let user
-//    try{
-//         user = await User.findById(req.params.id)
-//         if(user == null){
-//             return res.status(404).json({message: "Cannot find user"})
-//         }
-//    }
-//    catch(err){
-//     return res.status(500).json({message: err.message})
-//    }
-
-//    res.user = user
-//    next()
-// }
 
 export default LoginRouter;

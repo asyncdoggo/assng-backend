@@ -9,7 +9,7 @@ const ProjectRouter = express.Router()
 
 // token validator middleware
 function tokenRequired(req,res,next) {
-    let token = req.cookies.token
+    let token = req.headers.token
     if (token == null) return res.sendStatus(401)
   
     jsonwebtoken.verify(token, process.env.TOKEN_SECRET, (err, user) => {
@@ -20,15 +20,10 @@ function tokenRequired(req,res,next) {
 }
 
 
-
-
-
 ProjectRouter.get("/", tokenRequired, async (req,res) => {
     try{
-        let user = req.user;
-        //TODO
         const projects = await Project.find();
-        res.json(projects)
+        res.status(201).json({message:"success", projects:projects} )
     }
     catch(err){
         res.status(500).json({message: err.message})
@@ -59,28 +54,9 @@ ProjectRouter.post("/", tokenRequired,async (req,res) => {
     }
 })
 
-ProjectRouter.get("/:id",getProjects, tokenRequired, (req,res) => {
+ProjectRouter.get("/:id", tokenRequired, (req,res) => {
     res.json(res.project)
 })
-
-
-
-// middleware
-async function getProjects(req,res,next) {
-    let project
-   try{
-        project = await Project.findById(req.params.id)
-        if(project == null){
-            return res.status(404).json({message: "Cannot find Project"})
-        }
-   } 
-   catch(err){
-    return res.status(500).json({message: err.message})
-   }
-
-   res.project = project
-   next()
-}
 
 
 
