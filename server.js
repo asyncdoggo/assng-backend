@@ -7,6 +7,7 @@ import ProjectRouter from "./routes/projects.js";
 import cookieParser from "cookie-parser";
 import cors from 'cors';
 import counterRouter from "./routes/counters.js";
+import chartRouter from "./routes/chart.js";
 
 
 config()
@@ -29,6 +30,7 @@ app.use(cors())
 app.use("/login",LoginRouter)
 app.use("/projects", ProjectRouter)
 app.use("/counters", counterRouter)
+app.use("/charts", chartRouter)
 
 app.listen(3000, () => {
     console.log("server started at: http://localhost:3000")
