@@ -21,9 +21,18 @@ function tokenRequired(req,res,next) {
 
 
 ProjectRouter.get("/", tokenRequired, async (req,res) => {
+
+    let page = req.query.page
+    let size = req.query.size
+
     try{
-        const projects = await Project.find();
-        res.status(201).json({message:"success", projects:projects} )
+        const projects = await Project.find()
+        // .sort({_id:1})
+        .skip((page - 1) * size)
+        .limit(size);
+        const totalProjects = await Project.countDocuments();
+        const totalPages = Math.ceil(totalProjects / size);
+        res.status(201).json({message:"success", projects:projects, pages:totalPages} )
     }
     catch(err){
         res.status(500).json({message: err.message})
@@ -32,10 +41,11 @@ ProjectRouter.get("/", tokenRequired, async (req,res) => {
 
 
 ProjectRouter.post("/", tokenRequired,async (req,res) => {
-    let user = req.user
+    let user = req.body
     const project =  new Project({
         name: req.body.name,
         type: req.body.type,
+        reason:req.body.reason,
         division: req.body.division,
         category: req.body.category,
         priority: req.body.priority,
@@ -43,13 +53,14 @@ ProjectRouter.post("/", tokenRequired,async (req,res) => {
         start_date: req.body.start_date,
         end_date: req.body.end_date,
         location: req.body.location,
-        status: req.body.status
+        status: "Registered"
     }) 
     try{
         const newProject = await project.save()
-        res.status(201).json(newProject);
+        res.status(201).json({message:"success"});
     }
     catch(err){
+        console.log(err)
         res.status(400).json({message: err.message})
     }
 })

@@ -24,7 +24,7 @@ db.once('open',() => console.log("connected to db"))
 
 
 app.use(express.json())
-app.use(cookieParser())
+// app.use(cookieParser())
 app.use(cors())
 
 app.use("/login",LoginRouter)

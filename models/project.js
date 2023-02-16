@@ -2,6 +2,9 @@ import mongoose from "mongoose";
 
 
 const ProjectSchema = new mongoose.Schema({
+    _id:{
+        type:mongoose.Schema.ObjectId,
+    },
     name: {
         type: String,
         required:true
