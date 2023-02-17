@@ -1,7 +1,9 @@
 import express from "express";
 import cookieParser from "cookie-parser";
-import Project from "../models/project.js";
+import Project from "../models/project.js"
 import jsonwebtoken from "jsonwebtoken";
+import mongoose from "mongoose";
+import moment from 'moment';
 
 
 const ProjectRouter = express.Router()
@@ -24,17 +26,51 @@ ProjectRouter.get("/", tokenRequired, async (req,res) => {
 
     let page = req.query.page
     let size = req.query.size
+    let sort = req.query.sort
+    let search = req.query.search
+
+    if(search){
+       try{
+        const regex = new RegExp(search, "i");
+        const projects = await Project.find({name: { $regex: regex }})
+        return res.status(201).json({message:"success",projects:projects})
+       }
+       catch(err){
+        console.log(err)
+        return res.status(500).json({message:err.message})
+       }
+        
+
+    }
+
 
     try{
-        const projects = await Project.find()
-        // .sort({_id:1})
-        .skip((page - 1) * size)
-        .limit(size);
-        const totalProjects = await Project.countDocuments();
-        const totalPages = Math.ceil(totalProjects / size);
-        res.status(201).json({message:"success", projects:projects, pages:totalPages} )
+        Project.find({})
+         .sort({[sort]:1})
+         .skip((page - 1) * size)
+         .limit(size)
+         .exec(function(err, projects) {
+            if (err) {
+              console.log(err);
+            } else {
+              const formattedProjects = projects.map((project) => {
+                return {
+                  ...project.toObject(),
+                  start_date: moment(project.start_date).format('MMM-D, YYYY'),
+                  end_date: moment(project.end_date).format('MMM-D, YYYY')
+                };
+              });
+              const totalProjects =  Project.countDocuments();
+              const totalPages = Math.ceil(totalProjects / size);
+              res.status(201).json({message:"success", projects:formattedProjects, pages:totalPages} )
+            }
+          })
+        
+            
+       
     }
     catch(err){
+        console.log(err)
         res.status(500).json({message: err.message})
     }
 })
@@ -43,6 +79,7 @@ ProjectRouter.get("/", tokenRequired, async (req,res) => {
 ProjectRouter.post("/", tokenRequired,async (req,res) => {
     let user = req.body
     const project =  new Project({
+        _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
         type: req.body.type,
         reason:req.body.reason,
@@ -65,8 +102,18 @@ ProjectRouter.post("/", tokenRequired,async (req,res) => {
     }
 })
 
-ProjectRouter.get("/:id", tokenRequired, (req,res) => {
-    res.json(res.project)
+ProjectRouter.put("/", tokenRequired, (req,res) => {
+    const id = req.body.id
+    const status = req.body.status
+
+        Project.updateOne({ _id: id }, { $set: { status: status } }, function(err, result) {
+            if (err) {
+            console.log(err);
+            return res.status(404).json({message:"failure"})
+            } else {
+                return res.status(200).json({message:"success", status:status})
+            }
+        });
 })
 
 
