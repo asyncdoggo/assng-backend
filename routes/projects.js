@@ -10,79 +10,83 @@ const ProjectRouter = express.Router()
 
 
 // token validator middleware
-function tokenRequired(req,res,next) {
+function tokenRequired(req, res, next) {
     let token = req.headers.token
     if (token == null) return res.sendStatus(401)
-  
+
     jsonwebtoken.verify(token, process.env.TOKEN_SECRET, (err, user) => {
-      if (err) return res.sendStatus(403)
-      req.user = user
-      next()
+        if (err) return res.sendStatus(403)
+        req.user = user
+        next()
     })
 }
 
 
-ProjectRouter.get("/", tokenRequired, async (req,res) => {
+ProjectRouter.get("/", tokenRequired, async (req, res) => {
 
     let page = req.query.page
     let size = req.query.size
     let sort = req.query.sort
     let search = req.query.search
 
-    if(search){
-       try{
-        const regex = new RegExp(search, "i");
-        const projects = await Project.find({name: { $regex: regex }})
-        return res.status(201).json({message:"success",projects:projects})
-       }
-       catch(err){
-        console.log(err)
-        return res.status(500).json({message:err.message})
-       }
-        
+    try {
+        if (search) {
 
+            const regex = new RegExp(search, "i");
+            Project.find({ name: { $regex: regex } })
+                .exec(function (err, projects) {
+                    if (err) {
+                        console.log(err)
+                    }
+                    else {
+                        const formattedProjects = projects.map((projects) => {
+                            return {
+                                ...projects.toObject(),
+                                start_date: moment(projects.start_date).format('MMM-D, YYYY'),
+                                end_date: moment(projects.end_date).format('MMM-D, YYYY')
+                            };
+                        });
+                        return res.status(201).json({ message: "success", projects: formattedProjects })
+                    }
+                })
+        }
+        else {
+            Project.find({})
+                .sort({ [sort]: 1 })
+                .skip((page - 1) * size)
+                .limit(size)
+                .exec(async function (err, projects) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        const formattedProjects = projects.map((project) => {
+                            return {
+                                ...project.toObject(),
+                                start_date: moment(project.start_date).format('MMM-D, YYYY'),
+                                end_date: moment(project.end_date).format('MMM-D, YYYY')
+                            };
+                        });
+                        const totalProjects = await Project.countDocuments().exec();
+                        const totalPages = Math.ceil(totalProjects / size);
+                        res.status(201).json({ message: "success", projects: formattedProjects, pages: totalPages })
+                    }
+                })
+        }
     }
-
-
-    try{
-        Project.find({})
-         .sort({[sort]:1})
-         .skip((page - 1) * size)
-         .limit(size)
-         .exec(function(err, projects) {
-            if (err) {
-              console.log(err);
-            } else {
-              const formattedProjects = projects.map((project) => {
-                return {
-                  ...project.toObject(),
-                  start_date: moment(project.start_date).format('MMM-D, YYYY'),
-                  end_date: moment(project.end_date).format('MMM-D, YYYY')
-                };
-              });
-              const totalProjects =  Project.countDocuments();
-              const totalPages = Math.ceil(totalProjects / size);
-              res.status(201).json({message:"success", projects:formattedProjects, pages:totalPages} )
-            }
-          })
-        
-            
-       
-    }
-    catch(err){
+    catch (err) {
         console.log(err)
-        res.status(500).json({message: err.message})
+        res.status(500).json({ message: err.message })
     }
 })
 
 
-ProjectRouter.post("/", tokenRequired,async (req,res) => {
+ProjectRouter.post("/", tokenRequired, async (req, res) => {
     let user = req.body
-    const project =  new Project({
+    const project = new Project({
         _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
         type: req.body.type,
-        reason:req.body.reason,
+        reason: req.body.reason,
         division: req.body.division,
         category: req.body.category,
         priority: req.body.priority,
@@ -91,29 +95,29 @@ ProjectRouter.post("/", tokenRequired,async (req,res) => {
         end_date: req.body.end_date,
         location: req.body.location,
         status: "Registered"
-    }) 
-    try{
+    })
+    try {
         const newProject = await project.save()
-        res.status(201).json({message:"success"});
+        res.status(201).json({ message: "success" });
     }
-    catch(err){
+    catch (err) {
         console.log(err)
-        res.status(400).json({message: err.message})
+        res.status(400).json({ message: err.message })
     }
 })
 
-ProjectRouter.put("/", tokenRequired, (req,res) => {
+ProjectRouter.put("/", tokenRequired, (req, res) => {
     const id = req.body.id
     const status = req.body.status
 
-        Project.updateOne({ _id: id }, { $set: { status: status } }, function(err, result) {
-            if (err) {
+    Project.updateOne({ _id: id }, { $set: { status: status } }, function (err, result) {
+        if (err) {
             console.log(err);
-            return res.status(404).json({message:"failure"})
-            } else {
-                return res.status(200).json({message:"success", status:status})
-            }
-        });
+            return res.status(404).json({ message: "failure" })
+        } else {
+            return res.status(200).json({ message: "success", status: status })
+        }
+    });
 })
 
 
